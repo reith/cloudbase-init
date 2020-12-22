@@ -15,6 +15,7 @@
 import re
 
 import netaddr
+import time
 from oslo_log import log as oslo_logging
 
 from cloudbaseinit import exception
@@ -284,6 +285,20 @@ class NetworkConfigPlugin(plugin_base.BasePlugin):
                  "gateway": gateway, "dns": nameservers})
             reboot = osutils.set_static_network_config(
                 net.link, ip_address, prefix_len, gateway, nameservers)
+
+            for r in net.routes:
+                if netaddr.IPNetwork(r.network_cidr).prefixlen != 0:
+                    # for some reason we'll get "Network location cannot be
+                    # reached" error if we do this fast!
+                    time.sleep(2)
+                    LOG.info("Setting static route configuration "
+                             "destination: %(destination)s, "
+                             "gateway: %(gateway)s",
+                             {"destination": r.network_cidr,
+                              "gateway": r.gateway})
+                    ip_address, prefix_len = r.network_cidr.split("/")
+                    osutils.set_static_network_route(
+                        ip_address, prefix_len, r.gateway)
             reboot_required = reboot or reboot_required
 
         return reboot_required

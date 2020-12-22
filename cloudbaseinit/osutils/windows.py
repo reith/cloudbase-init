@@ -1009,6 +1009,29 @@ class WindowsUtils(base.BaseOSUtils):
             return self._set_static_network_config_legacy(
                 name, address, netmask, gateway, dnsnameservers)
 
+    def set_static_network_route(self, address, prefix_len_or_netmask,
+                                 gateway):
+        ip_network = netaddr.IPNetwork(
+            u"%s/%s" % (address, prefix_len_or_netmask))
+        conn = wmi.WMI(moniker='//./root/standardcimv2')
+        LOG.debug("Finding interface for remote address \"%(gw)s\"",
+                  {"gw": gateway})
+        res = conn.MSFT_NetRoute.find(RemoteIPAddress=gateway)
+        try:
+            iface = res[0][0].get_wrapped_object().get_element("InterfaceAlias")[2]
+        except (KeyError, IndexError) as e:
+            LOG.warning("Failed to find interface for static route, ignoring ",
+                        "destination: \"%(dest)s\", gateway: \"%(gw)s\", ",
+                        "error: \"%(e)s\"",
+                        {"dest": ip_network, "gw": gateway, "error": e})
+            return
+        LOG.debug(
+            "Adding static route for \"%(dest)s\" for interface \"%(iface)s\"",
+            {"dest": ip_network, "iface": iface})
+        conn.MSFT_NetRoute.create(
+            AddressFamily=AF_INET, DestinationPrefix=str(ip_network.cidr),
+            InterfaceAlias=iface)
+
     def _get_network_team_manager(self):
         if self._network_team_manager:
             return self._network_team_manager

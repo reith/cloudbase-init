@@ -460,6 +460,11 @@ class TestNetworkConfigPlugin(unittest.TestCase):
             mock.sentinel.link_id1, ip_address, prefix_len,
             mock.sentinel.gateway1, expected_dns_list)
 
+        ip_address, prefix_len = mock.sentinel.network_cidr2.split("/")
+        mock_os_utils.set_static_network_route.assert_called_once_with(
+            ip_address, prefix_len, mock.sentinel.gateway2
+        )
+
     def test_execute_network_details_v2(self):
         self._test_execute_network_details_v2()
 

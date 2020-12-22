@@ -104,6 +104,10 @@ class BaseOSUtils(object):
                                   gateway, dnsnameservers):
         raise NotImplementedError()
 
+    def set_static_network_route(self, address, prefix_len_or_netmask,
+                                 gateway):
+        raise NotImplementedError()
+
     def create_network_team(self, team_name, mode, load_balancing_algorithm,
                             members, mac_address, primary_nic_name=None,
                             primary_nic_vlan_id=None, lacp_timer=None):
